@@ -69,8 +69,10 @@
                 </table>
             </div>
 
-            <div class="row justify-content-center">
+            <div class="row justify-content-center shadow p-3 mb-5 bg-white rounded">
+                
                 <form action="process.php" method="POST">
+                    <h2>Formulaire</h2>
                     <input type="hidden" name="id" value=<?= $id ?>>
                     <div class="form-group">
                         <label for="">Prénom</label>
