@@ -61,6 +61,9 @@ if (!empty($_POST)) {
                 strip_tags($_POST['portable']),
                 strip_tags($_POST['id'])
             ));
+            $stmt->execute(array(
+                strip_tags($_POST['id'])
+            ));
         } catch(PDOException $e) {echo 'Erreur: '.$sql . "<br>" . $e->getMessage();$erreur=$sql;}
     } 
     else if (isset($_POST['delete'])) {  
@@ -111,7 +114,6 @@ try {
 
 ?>
 
-
     <div class="row justify-content-center shadow p-3 mb-5 bg-white rounded">
 
         <table class="table">
@@ -136,10 +138,15 @@ try {
                 <td><?= $results['portable']; ?></td>
                 
                 <td>
-                    <!-- <button type="submit" name="update" class="btn btn-info"> Mettre à jour</button> 
-                    <button type="submit" name="delete" class="btn btn-info"> Supprimer</button>  -->
-                    <a href="index.php?edit=<?php echo $results['id']; ?>" class="btn btn-info" name="update">Mettre à jour</a>
-                    <a href="index.php?delete=<?php echo $results['id']; ?>" class="btn btn-danger" name="delete">Effacer</a>
+                    <form methods="POST">
+                        <?php if(isset($_POST['edit'])) {?>
+                            <input type="hidden" name="update" value=<?php echo $results['id']; ?>>
+                            <button type="submit" name="update" class="btn btn-info"> Mettre à jour</button> 
+                        <?php } else if(isset($_POST['delete'])) {?>}
+                            <input type="hidden" name="delete" value=<?php echo $results['id']; ?>>
+                            <button type="submit" name="delete" class="btn btn-info"> Supprimer</button>
+                        <?php }?>    
+                    </form>
                 </td>
             </tr>
             <?php endwhile; ?>
@@ -158,14 +165,13 @@ try {
     $results=$stmt->fetch(PDO::FETCH_ASSOC);
     print_r($results);
 
-} else if($results['prenom'] || $results['nom'] || $results['email'] || $results['portable'] == true) {
+} else if($results['prenom']== true || $results['nom']== true || $results['email']== true || $results['portable'] == true) {
     $results=$stmt->fetch(PDO::FETCH_ASSOC);
     print_r($results);
 }
 ?>
  
 <div class="row justify-content-center shadow p-3 mb-5 bg-white rounded">
-                
                 <form method="POST">
                     <h2>Formulaire</h2>
                     <div class="form-group">
@@ -188,6 +194,7 @@ try {
                     <div class="form-group">
                         <!-- Transformation du bouton mise à jour -->
                             <button type="submit" name="insert" class="btn btn-info"> Insérer</button>
+                            <button type="submit" name="update" class="btn btn-info"> Mettre à jour</button>
                     </div>
                 </form> 
             </div>
