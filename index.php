@@ -109,62 +109,81 @@ try {
     print "Erreur ! " . $e->getMessage() . "<br/>";
 }
 
-while ($results=$stmt->fetch(PDO::FETCH_ASSOC)) {
-    // print_r($results);
-    ?>
+?>
 
-       <div class="row justify-content-center shadow p-3 mb-5 bg-white rounded">
+
+    <div class="row justify-content-center shadow p-3 mb-5 bg-white rounded">
+
+        <table class="table">
+            <thead>
+                <th>Id</th>
+                <th>Prénom</th>
+                <th>Nom</th>
+                <th>Email</th>
+                <th>Portable</th>
+                <th colspan=2>Action</th>
+            </thead>
+        
+        <?php
+            while ($results=$stmt->fetch(PDO::FETCH_ASSOC)) :
+            // print_r($results);
+        ?>
+            <tr>
+                <td><?= $results['id']; ?></td>
+                <td><?= $results['prenom']; ?></td>
+                <td><?= $results['nom']; ?></td>
+                <td><?= $results['email']; ?></td>
+                <td><?= $results['portable']; ?></td>
+                
+                <td>
+                    <!-- <button type="submit" name="update" class="btn btn-info"> Mettre à jour</button> 
+                    <button type="submit" name="delete" class="btn btn-info"> Supprimer</button>  -->
+                    <a href="index.php?edit=<?php echo $results['id']; ?>" class="btn btn-info" name="update">Mettre à jour</a>
+                    <a href="index.php?delete=<?php echo $results['id']; ?>" class="btn btn-danger" name="delete">Effacer</a>
+                </td>
+            </tr>
+            <?php endwhile; ?>
+        </table>       
+    </div>
+
+<?php if (isset($_GET['edit'])) {
+    //Selectionner tout de la table data
+    try {
+        $sql="SELECT * FROM data WHERE id=?;";
+        $stmt = $bdd->prepare($sql);
+        $stmt->execute(array($_GET['edit']));
+    } catch (Exception $e) {
+        print "Erreur ! " . $e->getMessage() . "<br/>";
+    } 
+    $results=$stmt->fetch(PDO::FETCH_ASSOC);
+    print_r($results);
+
+} else if($results['prenom'] || $results['nom'] || $results['email'] || $results['portable'] == true) {
+    $results=$stmt->fetch(PDO::FETCH_ASSOC);
+    print_r($results);
+}
+?>
+ 
+<div class="row justify-content-center shadow p-3 mb-5 bg-white rounded">
                 
                 <form method="POST">
                     <h2>Formulaire</h2>
-                    <input type="hidden" name="id" value="<?php echo $results['id']; ?>">
                     <div class="form-group">
                         <label for="">Prénom</label>
-                        <input type="text" name="prenom" class="form-control" value="<?php echo $results['prenom']; ?>" placeholder="Renseignez votre prénom">
+                        <input type="text" name="prenom" class="form-control" placeholder="Renseignez votre prénom" value=<?php echo $results['prenom'] ?>>
                     </div>
                     <div class="form-group">
                         <label for="">Nom</label>
-                        <input type="text" name="nom" class="form-control" value="<?php echo $results['nom']; ?>" placeholder="Renseignez votre nom">
+                        <input type="text" name="nom" class="form-control" placeholder="Renseignez votre nom" value=<?php echo $results['nom'] ?>>
                     </div>
 
                     <div class="form-group">
                         <label for="">Email</label>
-                        <input type="email" name="email" class="form-control" value="<?php echo $results['email']; ?>" placeholder="Renseignez votre adresse mail">
+                        <input type="email" name="email" class="form-control" placeholder="Renseignez votre adresse mail" value=<?php echo $results['email'] ?>>
                     </div>
                     <div class="form-group">
                         <label for="">Portable</label>
-                        <input type="tel" name="portable" class="form-control" value="<?php echo $results['portable']; ?>" placeholder="Renseignez votre numéro de portable">
-                    </div>
-                    <div class="form-group">
-                        <!-- Transformation du bouton mise à jour -->
-                            <button type="submit" name="update" class="btn btn-info"> Mettre à jour</button> 
-                            <button type="submit" name="delete" class="btn btn-info"> Supprimer</button> 
-                    </div>
-                </form> 
-            </div>
-
-  <?php } ?>
-
-  <div class="row justify-content-center shadow p-3 mb-5 bg-white rounded">
-                
-                <form method="POST">
-                    <h2>Formulaire</h2>
-                    <div class="form-group">
-                        <label for="">Prénom</label>
-                        <input type="text" name="prenom" class="form-control" placeholder="Renseignez votre prénom">
-                    </div>
-                    <div class="form-group">
-                        <label for="">Nom</label>
-                        <input type="text" name="nom" class="form-control" placeholder="Renseignez votre nom">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="">Email</label>
-                        <input type="email" name="email" class="form-control" placeholder="Renseignez votre adresse mail">
-                    </div>
-                    <div class="form-group">
-                        <label for="">Portable</label>
-                        <input type="tel" name="portable" class="form-control" placeholder="Renseignez votre numéro de portable">
+                        <input type="tel" name="portable" class="form-control" placeholder="Renseignez votre numéro de portable" value=<?php echo $results['portable'] ?>>
                     </div>
                     <div class="form-group">
                         <!-- Transformation du bouton mise à jour -->
