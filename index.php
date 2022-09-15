@@ -12,100 +12,165 @@
     
 </head>
 <body>
-    <?php require_once 'process.php'; ?>
 
-    <?php if (isset($_SESSION ['message'])) : ?>
-        <div class="alert bg-<?= $_SESSION['msg_type'] ?> text-white font-weight-bold"> <!-- alert- : rend le css dynamique -->
-            <?php
-                echo $_SESSION['message'];
-            ?>
-        </div>
-    <?php endif; ?>
+<?php
 
-    <div class="container">
-        <br>
-            <h1>Mon annuaire</h1>
-        <br>
-    
-        <?php
-            $mysqli = new mysqli('localhost', 'annuaire', '435326co777', 'annuaire') or die(mysqli_error($mysqli));
-            $result = $mysqli->query("SELECT * FROM data") or die($mysqli->error);
-       
-            //Renvoie un tableau associatif avec le nom des champs
-            //pre_r($result->fetch_assoc());
 
-            //Function qui permet de recuperer les info de la bdd et qui affiche un tableau
-            // function pre_r($array) {
-            //     echo '<pre>';
-            //     print_r($array);
-            //     echo '</pre>';
-            // }
-        ?>
-           
 
-            <div class="row justify-content-center">
-                <table class="table">
-                    <thead>
-                        <th>Prénom</th>
-                        <th>Nom</th>
-                        <th>Email</th>
-                        <th>Portable</th>
-                        <th colspan=2>Action</th>
-                    </thead>
-                    <?php
-                        while ($row = $result->fetch_assoc()) :
-                    ?>
-                        <tr>
-                            <td><?= $row["prenom"]; ?></td>
-                            <td><?= $row["nom"]; ?></td>
-                            <td><?= $row["email"]; ?></td>
-                            <td><?= $row["portable"]; ?></td>
-                            <td>
-                                <a href="index.php?edit=<?php echo $row['id']; ?>" class="btn btn-info" name="edit">Editer</a>
-                                <a href="index.php?delete=<?php echo $row['id']; ?>" class="btn btn-danger">Effacer</a>
-                            </td>
-                        </tr>
-                    <?php endwhile; ?>
-                </table>
-            </div>
+/**
+ * Gestion des sessions pour faciliter le refresh et redirection vers l'accueil
+ */
 
-            <div class="row justify-content-center shadow p-3 mb-5 bg-white rounded">
+session_start();
+
+if ($_SERVER['REMOTE_ADDR']=="127.0.0.1" || $_SERVER['REMOTE_ADDR']=="::1") {
+    try {
+        $bdd = new PDO("mysql:host=localhost;dbname=annuaire", "root", "");
+        $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    } catch(Exception $e) {
+        die($erreur_sql='Erreur connect bd: '.$e->getMessage());
+    }
+} else {
+    try {
+        $bdd = new PDO("mysql:host=[sql hote];dbname=[nom de la base]", "[utilisateur]", "[mot de passe]");
+        $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    } catch(Exception $e) {
+        die($erreur_sql='Erreur connect bd: '.$e->getMessage());
+    }
+}
+
+// $results=$stmt->fetchAll(PDO::FETCH_ASSOC);
+// print_r($results);
+
+echo '<hr>';
+
+$update = false;
+
+if (!empty($_POST)) {
+    print_r($_POST);
+
+    if (isset($_POST['update'])) { 
+        
+        try {
+            $sql = "UPDATE data SET nom=?, prenom=?, email=?, portable=? WHERE id = ?";
+            $stmt = $bdd->prepare($sql);
+            $stmt->execute(array(
+                strip_tags($_POST['nom']),
+                strip_tags($_POST['prenom']),
+                strip_tags($_POST['email']),
+                strip_tags($_POST['portable']),
+                strip_tags($_POST['id'])
+            ));
+        } catch(PDOException $e) {echo 'Erreur: '.$sql . "<br>" . $e->getMessage();$erreur=$sql;}
+    } 
+    else if (isset($_POST['delete'])) {  
+        try {
+            $sql = "DELETE FROM data WHERE id = ?";
+            $stmt = $bdd->prepare($sql);
+            $stmt->execute(array(
+                strip_tags($_POST['id'])
+            ));
+        } catch(PDOException $e) {echo 'Erreur: '.$sql . "<br>" . $e->getMessage();$erreur=$sql;}
+    }
+    else if (isset($_POST['insert'])) { 
+        
+        if(filter_var(strip_tags($_POST['email']), FILTER_VALIDATE_EMAIL)) {
+            echo "L'email est correct";
+            echo '<br>';
+             // Insérer nouveau 
+             try {
+                $sql = "INSERT INTO data SET nom=?, prenom=?, email=?, portable=?";
+                $stmt = $bdd->prepare($sql);
+                $stmt->execute(array(
+                    strip_tags($_POST['nom']),
+                    strip_tags($_POST['prenom']),
+                    strip_tags($_POST['email']),
+                    strip_tags($_POST['portable'])
+                ));
+
+                $last_id = $bdd->lastInsertId();
+                echo 'Le dernier id inséré est > '.$last_id;
+
+            } catch(PDOException $e) {echo 'Erreur: '.$sql . "<br>" . $e->getMessage();$erreur=$sql;}
+          }
+          else
+          { 
+            // Ne pas insérer
+            echo "L'email n'est pas correct, nous n'avons pas pu vous insérer";
+          } 
+    } 
+}
+
+try {
+    $sql="SELECT * FROM data;";
+    $stmt = $bdd->prepare($sql);
+    $stmt->execute();
+} catch (Exception $e) {
+    print "Erreur ! " . $e->getMessage() . "<br/>";
+}
+
+while ($results=$stmt->fetch(PDO::FETCH_ASSOC)) {
+    // print_r($results);
+    ?>
+
+       <div class="row justify-content-center shadow p-3 mb-5 bg-white rounded">
                 
-                <form action="process.php" method="POST">
+                <form method="POST">
                     <h2>Formulaire</h2>
-                    <input type="hidden" name="id" value=<?= $id ?>>
+                    <input type="hidden" name="id" value="<?php echo $results['id']; ?>">
                     <div class="form-group">
                         <label for="">Prénom</label>
-                        <input type="text" name="prenom" class="form-control" value="<?php echo $name; ?>" placeholder="Renseignez votre prénom">
+                        <input type="text" name="prenom" class="form-control" value="<?php echo $results['prenom']; ?>" placeholder="Renseignez votre prénom">
                     </div>
                     <div class="form-group">
                         <label for="">Nom</label>
-                        <input type="text" name="nom" class="form-control" value="<?php echo $lastname; ?>" placeholder="Renseignez votre nom">
+                        <input type="text" name="nom" class="form-control" value="<?php echo $results['nom']; ?>" placeholder="Renseignez votre nom">
                     </div>
 
                     <div class="form-group">
                         <label for="">Email</label>
-                        <input type="email" name="email" class="form-control" value="<?php echo $email; ?>" placeholder="Renseignez votre adresse mail">
+                        <input type="email" name="email" class="form-control" value="<?php echo $results['email']; ?>" placeholder="Renseignez votre adresse mail">
                     </div>
                     <div class="form-group">
                         <label for="">Portable</label>
-                        <input type="tel" name="portable" class="form-control" value="<?php echo $phone; ?>" placeholder="Renseignez votre numéro de portable">
+                        <input type="tel" name="portable" class="form-control" value="<?php echo $results['portable']; ?>" placeholder="Renseignez votre numéro de portable">
                     </div>
                     <div class="form-group">
                         <!-- Transformation du bouton mise à jour -->
-                        <?php if($update == true) : ?>
                             <button type="submit" name="update" class="btn btn-info"> Mettre à jour</button> 
-                        <?php else : ?>
-                            <button type="submit" class="btn btn-primary" name="save">Enregistrer</button>
-                        <?php endif; ?>
+                            <button type="submit" name="delete" class="btn btn-info"> Supprimer</button> 
                     </div>
                 </form> 
-                
             </div>
 
-    </div>
+  <?php } ?>
 
-   
+  <div class="row justify-content-center shadow p-3 mb-5 bg-white rounded">
+                
+                <form method="POST">
+                    <h2>Formulaire</h2>
+                    <div class="form-group">
+                        <label for="">Prénom</label>
+                        <input type="text" name="prenom" class="form-control" placeholder="Renseignez votre prénom">
+                    </div>
+                    <div class="form-group">
+                        <label for="">Nom</label>
+                        <input type="text" name="nom" class="form-control" placeholder="Renseignez votre nom">
+                    </div>
 
+                    <div class="form-group">
+                        <label for="">Email</label>
+                        <input type="email" name="email" class="form-control" placeholder="Renseignez votre adresse mail">
+                    </div>
+                    <div class="form-group">
+                        <label for="">Portable</label>
+                        <input type="tel" name="portable" class="form-control" placeholder="Renseignez votre numéro de portable">
+                    </div>
+                    <div class="form-group">
+                        <!-- Transformation du bouton mise à jour -->
+                            <button type="submit" name="insert" class="btn btn-info"> Insérer</button>
+                    </div>
+                </form> 
+            </div>
 </body>
 </html>
